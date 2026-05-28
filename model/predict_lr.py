@@ -1,67 +1,33 @@
 import pickle
-import numpy as np
-from tensorflow.keras.models import load_model
-from tensorflow.keras.layers import (
-    Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout,
-)
-from tensorflow.keras.preprocessing.sequence import pad_sequences
 from utils.preprocess import clean_text
 from rules.rule_engine import get_engine
 
-MAX_LEN = 200
-MODEL_PATH = "model/cnn_model.h5"
-TOKENIZER_PATH = "model/tokenizer.pkl"
+MODEL_PATH = "model/lr_model.pkl"
+VECTORIZER_PATH = "model/tfidf_vectorizer.pkl"
 
 # Lazy loading — chỉ load khi cần
 _model = None
-_tokenizer = None
-
-
-def _make_patched(layer_cls):
-    """Tạo subclass bỏ qua quantization_config khi deserialize."""
-
-    class Patched(layer_cls):
-        @classmethod
-        def from_config(cls, config):
-            config.pop("quantization_config", None)
-            return super().from_config(config)
-
-    Patched.__name__ = layer_cls.__name__
-    Patched.__qualname__ = layer_cls.__qualname__
-    return Patched
-
-
-# Patch tất cả layer dùng trong model
-_CUSTOM_OBJECTS = {
-    name: _make_patched(cls)
-    for name, cls in [
-        ("Embedding", Embedding),
-        ("Conv1D", Conv1D),
-        ("GlobalMaxPooling1D", GlobalMaxPooling1D),
-        ("Dense", Dense),
-        ("Dropout", Dropout),
-    ]
-}
+_vectorizer = None
 
 
 def _load_model():
-    """Load model và tokenizer nếu chưa load."""
-    global _model, _tokenizer
+    """Load model LR và TF-IDF vectorizer nếu chưa load."""
+    global _model, _vectorizer
     if _model is None:
-        _model = load_model(
-            MODEL_PATH,
-            compile=False,
-            custom_objects=_CUSTOM_OBJECTS,
-        )
-    if _tokenizer is None:
-        with open(TOKENIZER_PATH, "rb") as f:
-            _tokenizer = pickle.load(f)
+        with open(MODEL_PATH, "rb") as f:
+            _model = pickle.load(f)
+        # Fix tương thích scikit-learn mới: attribute đã bị loại bỏ
+        if not hasattr(_model, "multi_class"):
+            _model.multi_class = "auto"
+    if _vectorizer is None:
+        with open(VECTORIZER_PATH, "rb") as f:
+            _vectorizer = pickle.load(f)
 
 
 def predict_email(text, sender_email=None, use_rules=True):
     """
-    Phân loại email: Normal hoặc Spam.
-    Kết hợp rule-based check (nếu có sender info) + CNN model.
+    Phân loại email: Normal hoặc Spam bằng Logistic Regression.
+    Kết hợp rule-based check (nếu có sender info) + LR model.
 
     Args:
         text: Nội dung email (subject + body)
@@ -72,7 +38,7 @@ def predict_email(text, sender_email=None, use_rules=True):
         - label: "Spam" / "Normal"
         - confidence: float (0-1)
         - display: str hiển thị
-        - method: "rule_whitelist" / "rule_keyword" / "model_cnn"
+        - method: "rule_whitelist" / "rule_keyword" / "model_lr"
         - matched_rules: list (nếu dùng rules)
         - spam_score: float (nếu dùng rules)
     """
@@ -103,28 +69,28 @@ def predict_email(text, sender_email=None, use_rules=True):
                 "details": rule_result["details"],
             }
 
-    # ─── Step 2: Fallback sang CNN model ───
+    # ─── Step 2: Fallback sang LR model ───
     _load_model()
 
     clean = clean_text(text)
-    seq = _tokenizer.texts_to_sequences([clean])
-    padded = pad_sequences(seq, maxlen=MAX_LEN)
+    X = _vectorizer.transform([clean])
 
-    prob = _model.predict(padded, verbose=0)[0][0]
+    prob = _model.predict_proba(X)[0]  # [prob_normal, prob_spam]
+    spam_prob = prob[1]
 
-    if prob > 0.5:
+    if spam_prob > 0.5:
         label = "Spam"
-        confidence = prob
+        confidence = spam_prob
     else:
         label = "Normal"
-        confidence = 1 - prob
+        confidence = 1 - spam_prob
 
     return {
         "label": label,
         "confidence": float(confidence),
         "display": f"{label} ({confidence:.1%})",
-        "method": "model_cnn",
+        "method": "model_lr",
         "matched_rules": [],
         "spam_score": 0.0,
-        "details": "Phân loại bằng CNN model.",
+        "details": "Phân loại bằng Logistic Regression (TF-IDF).",
     }

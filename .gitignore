@@ -1,1 +1,7 @@
-.vs/ 
+.vs/
+__pycache__/
+*.pyc
+logs/
+.vscode/
+.idea/
+*.log
