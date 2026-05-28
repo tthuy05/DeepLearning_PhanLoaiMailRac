@@ -27,6 +27,22 @@ class EmailClassifierApp:
         style = ttk.Style()
         style.theme_use("clam")
 
+        # Cấu hình bỏ viền nét đứt khi focus/click cho Button và Notebook Tab
+        style.layout("TButton", [
+            ('Button.border', {'sticky': 'nswe', 'border': '1', 'children': [
+                ('Button.padding', {'sticky': 'nswe', 'children': [
+                    ('Button.label', {'sticky': 'nswe'})
+                ]})
+            ]})
+        ])
+        style.layout("TNotebook.Tab", [
+            ('Notebook.tab', {'sticky': 'nswe', 'children': [
+                ('Notebook.padding', {'side': 'top', 'sticky': 'nswe', 'children': [
+                    ('Notebook.label', {'side': 'top', 'sticky': ''})
+                ]})
+            ]})
+        ])
+
         # Tạo notebook (tabs)
         self.notebook = ttk.Notebook(root)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=8, pady=8)
