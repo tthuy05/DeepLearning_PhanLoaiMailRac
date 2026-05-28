@@ -3,7 +3,7 @@ import sys
 import pandas as pd
 
 # Đảm bảo import từ project root
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from utils.clean_dataset import load_and_clean_vn, merge_datasets
 
@@ -33,7 +33,7 @@ def prepare_data():
     df_merged = df_merged.drop_duplicates(subset=['clean_text'])
 
     # Lưu merged dataset
-    output_path = "data/data_clean_merged.csv"
+    output_path = "data/spam_clean_merged.csv"
     
     df_save = df_merged[['text', 'label', 'clean_text']]
     df_save.to_csv(output_path, index=False, encoding='utf-8')

@@ -1,22 +1,33 @@
-# 📧 Email Classification using CNN — Deep Learning
+# 📧 Email Classification — Spam Detector
 
-Đồ án phân loại email **Normal / Spam** sử dụng mô hình **Convolutional Neural Network (CNN)**.
+Đồ án phân loại email **Normal / Spam** sử dụng **CNN (Deep Learning)**, **Logistic Regression (TF-IDF)** và **Rule-Based Detection**.
 
 ## 📁 Cấu trúc dự án
 
 ```
 EmailClassification/
 ├── main.py                     # Entry point — khởi chạy GUI
-├── test_predict.py             # Test phân loại với email mẫu
+├── test.py                     # Test phân loại với email mẫu
 ├── requirements.txt            # Danh sách thư viện
 ├── data/
-│   ├── spam.csv                # Dataset gốc
-│   └── spam_clean.csv          # Dataset đã tiền xử lý
+│   ├── spam_assassin.csv       # Dataset gốc (Spam Assassin)
+│   ├── spam_clean.csv          # Dataset đã tiền xử lý
+│   ├── spam_clean_merged.csv   # Dataset merged (EN + VN)
+│   ├── dataset_vn.csv          # Dataset tiếng Việt
+│   ├── dataset_vn.py           # Script tạo dataset VN
+│   └── prepare.py              # Script merge datasets
 ├── model/
-│   ├── train_cnn.py            # Script huấn luyện model CNN
-│   ├── predict_cnn.py          # Hàm phân loại email
-│   ├── cnn_model.h5            # Model đã huấn luyện
-│   └── tokenizer.pkl           # Tokenizer đã huấn luyện
+│   ├── train_cnn.py            # Huấn luyện model CNN
+│   ├── train_lr.py             # Huấn luyện model Logistic Regression
+│   ├── predict_cnn.py          # Hàm phân loại bằng CNN
+│   ├── predict_lr.py           # Hàm phân loại bằng Logistic Regression
+│   ├── cnn_model.h5            # Model CNN đã huấn luyện
+│   ├── tokenizer.pkl           # Tokenizer cho CNN
+│   ├── lr_model.pkl            # Model LR đã huấn luyện
+│   └── tfidf_vectorizer.pkl    # TF-IDF Vectorizer cho LR
+├── rules/
+│   ├── rule_engine.py          # Bộ phát hiện spam/phishing dựa trên rules
+│   └── vietnam_spam_rules.py   # Rules phát hiện spam tiếng Việt
 ├── GUI/
 │   └── app.py                  # Giao diện Tkinter
 ├── email_reader/
@@ -46,27 +57,55 @@ pip install -r requirements.txt
 python -m utils.save_clean_data
 ```
 
-### 2. Huấn luyện model
+### 2. Merge dataset (EN + VN)
+```bash
+python -m data.prepare
+```
+
+### 3. Huấn luyện model CNN
 ```bash
 python -m model.train_cnn
 ```
 
-### 3. Chạy GUI
+### 4. Huấn luyện model Logistic Regression
+```bash
+python -m model.train_lr
+```
+
+### 5. Chạy GUI
 ```bash
 python main.py
 ```
 
-### 4. Test nhanh qua CLI
+### 6. Test nhanh qua CLI
 ```bash
-python test_predict.py
+python test.py
 ```
 
 ## 📊 Kết quả
 
-- **Model**: CNN (Embedding → Conv1D → GlobalMaxPooling1D → Dense → Dropout → Sigmoid)
-- **Dataset**: ~5,300 email samples
+### CNN (Deep Learning)
+- **Model**: Embedding → Conv1D → GlobalMaxPooling1D → Dense → Dropout → Sigmoid
 - **Accuracy**: ~99%
-- **Phân loại**: Normal (Ham) / Spam
+
+### Logistic Regression (TF-IDF)
+- **Model**: TF-IDF Vectorizer + Logistic Regression
+- **Accuracy**: ~98.8%
+- **ROC-AUC**: ~99.9%
+
+### Rule-Based Detection
+- Whitelist domain/sender đáng tin cậy
+- Keyword matching theo nhóm (có trọng số)
+- Suspicious domain/sender pattern detection
+- Hỗ trợ nhận diện spam tiếng Việt
+
+## 🎯 Thuật toán phân loại
+
+Giao diện cho phép chọn thuật toán:
+1. **CNN (Deep Learning)** — Mạng nơ-ron tích chập
+2. **Logistic Regression (TF-IDF)** — Hồi quy logistic với TF-IDF
+
+Quy trình phân loại: Rule-based check trước → Model AI sau (nếu rules không đủ evidence).
 
 ## 🔑 Lưu ý sử dụng Gmail IMAP
 
@@ -78,9 +117,10 @@ python test_predict.py
 
 ## 🛠 Công nghệ
 
-- **Python 3.11.x**
+- **Python 3.10+**
 - **TensorFlow/Keras** — Mô hình CNN
+- **scikit-learn** — Logistic Regression, đánh giá model
 - **NLTK** — Tiền xử lý ngôn ngữ tự nhiên
-- **scikit-learn** — Đánh giá model
 - **Tkinter** — Giao diện người dùng
 - **imaplib** — Đọc email qua IMAP
+- **Matplotlib** — Biểu đồ training

@@ -30,6 +30,12 @@ def train():
     logger.info("Loading cleaned dataset...")
     df = pd.read_csv("data/spam_clean_merged.csv")
 
+    # Kiểm tra cột cần thiết
+    for col in ['clean_text', 'label']:
+        if col not in df.columns:
+            raise ValueError(f"Missing column '{col}' in dataset.")
+    df = df.dropna(subset=['clean_text', 'label'])
+
     texts = df['clean_text']
     labels = df['label']  # 0 = Normal (ham), 1 = Spam
 

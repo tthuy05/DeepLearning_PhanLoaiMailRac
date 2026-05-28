@@ -1,4 +1,5 @@
 import random
+import os
 import pandas as pd
 
 spam_templates = [
@@ -29,15 +30,15 @@ normal_templates = [
 
 def generate_spam():
     text = random.choice(spam_templates)
-    return text.format(
-        amount=random.randint(1000000, 1000000000)
-    )
+    if "{amount}" in text:
+        return text.format(amount=random.randint(1000000, 1000000000))
+    return text
 
 def generate_normal():
     text = random.choice(normal_templates)
-    return text.format(
-        code=random.randint(100000, 999999)
-    )
+    if "{code}" in text:
+        return text.format(code=random.randint(100000, 999999))
+    return text
 
 data = []
 
@@ -52,8 +53,9 @@ for _ in range(250):
 # shuffle
 random.shuffle(data)
 
-# save CSV
+# save CSV — luôn lưu vào thư mục data/ bất kể CWD là gì
+output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "dataset_vn.csv")
 df = pd.DataFrame(data, columns=["text", "label"])
-df.to_csv("dataset_vn.csv", index=False, encoding="utf-8")
+df.to_csv(output_path, index=False, encoding="utf-8")
 
-print("Đã tạo dataset_vn.csv với 500 dòng!")
+print(f"Đã tạo {output_path} với 500 dòng!")
