@@ -1,4 +1,8 @@
-﻿from model.predict_cnn import predict_email
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+from model.predict_cnn import predict_email
 
 def run_test():
     test_cases = [
