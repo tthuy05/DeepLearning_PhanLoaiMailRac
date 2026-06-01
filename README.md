@@ -1,6 +1,6 @@
 # 📧 Email Classification — Spam Detector
 
-Đồ án phân loại email **Normal / Spam** sử dụng **CNN (Deep Learning)**, **Logistic Regression (TF-IDF)** và **Rule-Based Detection**.
+Đồ án phân loại email **Normal / Spam** sử dụng mạng nơ-ron tích chập **CNN (Deep Learning)** kết hợp công cụ phát hiện dựa trên luật **Rule-Based Detection**.
 
 ## 📁 Cấu trúc dự án
 
@@ -17,19 +17,15 @@ EmailClassification/
 │   ├── dataset_vn.py           # Script tạo dataset VN
 │   └── prepare.py              # Script merge datasets
 ├── model/
-│   ├── train_cnn.py            # Huấn luyện model CNN
-│   ├── train_lr.py             # Huấn luyện model Logistic Regression
+│   ├── train_cnn.py            # Huấn luyện mô hình CNN
 │   ├── predict_cnn.py          # Hàm phân loại bằng CNN
-│   ├── predict_lr.py           # Hàm phân loại bằng Logistic Regression
-│   ├── cnn_model.h5            # Model CNN đã huấn luyện
-│   ├── tokenizer.pkl           # Tokenizer cho CNN
-│   ├── lr_model.pkl            # Model LR đã huấn luyện
-│   └── tfidf_vectorizer.pkl    # TF-IDF Vectorizer cho LR
+│   ├── cnn_model.h5            # Mô hình CNN đã huấn luyện
+│   └── tokenizer.pkl           # Tokenizer cho mô hình CNN
 ├── rules/
 │   ├── rule_engine.py          # Bộ phát hiện spam/phishing dựa trên rules
 │   └── vietnam_spam_rules.py   # Rules phát hiện spam tiếng Việt
 ├── GUI/
-│   └── app.py                  # Giao diện Tkinter
+│   └── app.py                  # Giao diện Tkinter (chỉ dùng CNN)
 ├── email_reader/
 │   └── imap_reader.py          # Đọc email từ Gmail qua IMAP
 ├── utils/
@@ -62,65 +58,49 @@ python -m utils.save_clean_data
 python -m data.prepare
 ```
 
-### 3. Huấn luyện model CNN
+### 3. Huấn luyện mô hình CNN
 ```bash
 python -m model.train_cnn
 ```
 
-### 4. Huấn luyện model Logistic Regression
-```bash
-python -m model.train_lr
-```
-
-### 5. Chạy GUI
+### 4. Chạy giao diện chính (GUI)
 ```bash
 python main.py
 ```
 
-### 6. Test nhanh qua CLI
+### 5. Kiểm thử nhanh bằng dòng lệnh
 ```bash
 python test.py
 ```
 
-## 📊 Kết quả
+## 📊 Kết quả mô hình CNN
+- **Kiến trúc mạng**: Embedding → Conv1D → GlobalMaxPooling1D → Dense (ReLU) → Dropout → Dense (Sigmoid)
+- **Độ chính xác (Accuracy)**: Đạt khoảng ~99% trên tập kiểm thử
+- **Ưu điểm**: Khả năng phân tích ngữ cảnh từ ngữ thông qua lớp chập 1 chiều (Conv1D) cực kỳ mạnh mẽ, rất phù hợp cho xử lý ngôn ngữ tự nhiên.
 
-### CNN (Deep Learning)
-- **Model**: Embedding → Conv1D → GlobalMaxPooling1D → Dense → Dropout → Sigmoid
-- **Accuracy**: ~99%
-
-### Logistic Regression (TF-IDF)
-- **Model**: TF-IDF Vectorizer + Logistic Regression
-- **Accuracy**: ~98.8%
-- **ROC-AUC**: ~99.9%
-
-### Rule-Based Detection
-- Whitelist domain/sender đáng tin cậy
-- Keyword matching theo nhóm (có trọng số)
-- Suspicious domain/sender pattern detection
-- Hỗ trợ nhận diện spam tiếng Việt
-
-## 🎯 Thuật toán phân loại
-
-Giao diện cho phép chọn thuật toán:
-1. **CNN (Deep Learning)** — Mạng nơ-ron tích chập
-2. **Logistic Regression (TF-IDF)** — Hồi quy logistic với TF-IDF
-
-Quy trình phân loại: Rule-based check trước → Model AI sau (nếu rules không đủ evidence).
+## 🎯 Quy trình phân loại email
+Để tối ưu hóa thời gian và độ chính xác, ứng dụng hoạt động theo cơ chế lai (Hybrid):
+1. **Rule-Based Check (Kiểm tra theo luật)**:
+   * Kiểm tra Whitelist người gửi đáng tin cậy.
+   * Lọc từ khóa spam tiếng Việt theo nhóm trọng số nhạy cảm.
+   * Nếu phát hiện khớp tuyệt đối các bộ luật này, hệ thống sẽ trả về kết quả ngay lập tức để tiết kiệm chi phí tính toán.
+2. **CNN Model Predict (Phân loại mạng nơ-ron)**:
+   * Nếu email không vi phạm bất kỳ luật cứng nào, hệ thống sẽ đẩy nội dung văn bản qua bộ tokenizer và đưa vào mô hình Deep Learning CNN để tính toán xác suất Spam.
 
 ## 🔑 Lưu ý sử dụng Gmail IMAP
 
-Để đọc email từ Gmail, bạn cần:
+Để đọc email từ Gmail của bạn trực tiếp trên ứng dụng, vui lòng thực hiện:
 
-1. Bật **2-Step Verification** trong cài đặt Google Account
-2. Tạo **App Password** tại: https://myaccount.google.com/apppasswords
-3. Sử dụng App Password (không phải mật khẩu thường) trong GUI
+1. Bật **Xác minh 2 bước (2-Step Verification)** trong cài đặt Tài khoản Google của bạn.
+2. Tạo một **Mật khẩu ứng dụng (App Password)** tại: https://myaccount.google.com/apppasswords
+3. Sử dụng Mật khẩu ứng dụng vừa tạo (16 ký tự viết liền) để đăng nhập trong giao diện GUI.
 
-## 🛠 Công nghệ
+## 🛠 Công nghệ sử dụng
 
 - **Python 3.10+**
-- **TensorFlow/Keras** — Mô hình CNN
-- **scikit-learn** — Logistic Regression, đánh giá model
-- **NLTK** — Tiền xử lý ngôn ngữ tự nhiên
-- **Tkinter** — Giao diện người dùng
-- **imaplib** — Đọc email qua IMAP
-- **Matplotlib** — Biểu đồ training
+- **TensorFlow/Keras** — Xây dựng và huấn luyện mô hình CNN
+- **scikit-learn** — Hỗ trợ chia tập dữ liệu và đánh giá mô hình
+- **NLTK** — Tiền xử lý dữ liệu ngôn ngữ tự nhiên
+- **Tkinter** — Lập trình giao diện người dùng trực quan
+- **imaplib** — Kết nối cổng IMAP đọc email Gmail an toàn
+- **Matplotlib** — Biểu thị quá trình huấn luyện mô hình học sâu

@@ -3,14 +3,7 @@ from tkinter import ttk, messagebox, scrolledtext
 import threading
 
 from model.predict_cnn import predict_email as predict_cnn
-from model.predict_lr import predict_email as predict_lr
 from email_reader.imap_reader import fetch_emails
-
-# Mapping tên hiển thị → hàm predict
-MODEL_OPTIONS = {
-    "CNN (Deep Learning)": predict_cnn,
-    "Logistic Regression (TF-IDF)": predict_lr,
-}
 
 
 class EmailClassifierApp:
@@ -60,24 +53,9 @@ class EmailClassifierApp:
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="  Nhập Email  ")
 
-        # --- Chọn thuật toán ---
-        frm_algo = ttk.LabelFrame(tab, text="Thuật toán phân loại")
-        frm_algo.pack(fill=tk.X, padx=10, pady=(10, 5))
-
-        ttk.Label(frm_algo, text="Chọn thuật toán:").grid(
-            row=0, column=0, padx=8, pady=6, sticky=tk.W
-        )
-        self.cmb_algo = ttk.Combobox(
-            frm_algo, values=list(MODEL_OPTIONS.keys()),
-            state="readonly", width=30
-        )
-        self.cmb_algo.grid(row=0, column=1, padx=8, pady=6, sticky=tk.W)
-        self.cmb_algo.current(0)
-        frm_algo.columnconfigure(1, weight=1)
-
         # --- Sender ---
         frm_sender = ttk.LabelFrame(tab, text="Thông tin người gửi")
-        frm_sender.pack(fill=tk.X, padx=10, pady=(5, 5))
+        frm_sender.pack(fill=tk.X, padx=10, pady=(10, 5))
 
         ttk.Label(frm_sender, text="Email người gửi:").grid(
             row=0, column=0, padx=8, pady=6, sticky=tk.W
@@ -149,9 +127,8 @@ class EmailClassifierApp:
         self.btn_classify.config(state=tk.DISABLED)
         self.lbl_status.config(text="Đang phân loại...")
 
-        # Lấy hàm predict theo thuật toán được chọn
-        algo_name = self.cmb_algo.get()
-        predict_fn = MODEL_OPTIONS.get(algo_name, predict_cnn)
+        # Sử dụng mô hình CNN
+        predict_fn = predict_cnn
 
         # Chạy predict trên thread riêng để GUI không bị đơ
         def _predict():
@@ -236,14 +213,6 @@ class EmailClassifierApp:
         self.spin_count.grid(row=2, column=1, padx=8, pady=4, sticky=tk.W)
         self.spin_count.set(5)
 
-        ttk.Label(frm_login, text="Thuật toán:").grid(row=3, column=0, padx=8, pady=4, sticky=tk.W)
-        self.cmb_gmail_algo = ttk.Combobox(
-            frm_login, values=list(MODEL_OPTIONS.keys()),
-            state="readonly", width=30
-        )
-        self.cmb_gmail_algo.grid(row=3, column=1, padx=8, pady=4, sticky=tk.W)
-        self.cmb_gmail_algo.current(0)
-
         frm_login.columnconfigure(1, weight=1)
 
         frm_gmail_btn = ttk.Frame(tab)
@@ -296,9 +265,8 @@ class EmailClassifierApp:
         self.btn_fetch.config(state=tk.DISABLED)
         self.lbl_gmail_status.config(text="Đang kết nối Gmail...")
 
-        # Lấy hàm predict theo thuật toán được chọn
-        algo_name = self.cmb_gmail_algo.get()
-        predict_fn = MODEL_OPTIONS.get(algo_name, predict_cnn)
+        # Sử dụng mô hình CNN
+        predict_fn = predict_cnn
 
         def _fetch_and_classify():
             try:
